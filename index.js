@@ -34,6 +34,17 @@ async function run() {
             const result = await JobNestDB.find().toArray();
             res.send(result);
         });
+        app.get("/posted",async (req, res) => {
+            let query={};
+            
+            if(req.query?.email)
+                {
+                    query={email:req.query.email}
+                }
+                console.log(query);
+                const result = await JobNestDB.find(query).toArray();
+                res.send(result);
+        })
         app.get("/applyBy", async (req, res) => {
             const result = await applyNestDB.find().toArray();
             res.send(result);
