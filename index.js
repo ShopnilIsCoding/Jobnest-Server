@@ -69,6 +69,22 @@ app.post('/applyBy',async (req, res) => {
     const result = await applyNestDB.insertOne(apply);
     res.send(result);
 });
+app.get('/checkApplication', async (req, res) => {
+    
+        const jobId = req.query.jobId; 
+        const applicantEmail = req.query.applicantEmail; 
+        console.log(jobId,applicantEmail);
+        
+        const existingApplication = await applyNestDB.findOne({
+            ID:jobId,
+            applicantEmail: applicantEmail
+        });
+        console.log(!!existingApplication);
+
+        res.send({ applied: Boolean(existingApplication) }); 
+       
+    
+});
         
 
         
