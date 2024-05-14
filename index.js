@@ -3,7 +3,7 @@ const cors = require('cors');
 require("dotenv").config();
 const app = express();
 const port=process.env.PORT || 3000;
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 //middleware
 app.use(cors());
@@ -27,10 +27,15 @@ async function run() {
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
         const JobNestDB = client.db("JobNestDB").collection("jobs");
+        const applyNestDB = client.db("JobNestDB").collection("applications");
         
 
         app.get("/all", async (req, res) => {
             const result = await JobNestDB.find().toArray();
+            res.send(result);
+        });
+        app.get("/applyBy", async (req, res) => {
+            const result = await applyNestDB.find().toArray();
             res.send(result);
         });
         app.post('/all',async (req, res) => {
@@ -38,8 +43,32 @@ async function run() {
             const result = await JobNestDB.insertOne(job);
             res.send(result);
         });
+        app.get("/details/:id", async (req, res) => {
+            const id = req.params.id;
+            console.log(id);
+            const query = { _id: new ObjectId(id) };
+            const result = await JobNestDB.findOne(query);
+            res.send(result);
+        });
+        app.post("/details/:id",async (req, res) => {
+            const id =req.params.id;
+            const job = await JobNestDB.findOne({ _id: new ObjectId(id) });
+            const jobApplicantsNumber = parseInt(job.jobApplicantsNumber);
+            
+            const result = await JobNestDB.updateOne(
+                { _id: new ObjectId(id) },
+                { $set: { jobApplicantsNumber: jobApplicantsNumber + 1 } }
+              );
+            res.send(result);
+    }
     
-
+)
+    
+app.post('/applyBy',async (req, res) => {
+    const apply = req.body;
+    const result = await applyNestDB.insertOne(apply);
+    res.send(result);
+});
         
 
         
