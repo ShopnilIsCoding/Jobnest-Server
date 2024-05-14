@@ -38,6 +38,17 @@ async function run() {
             const result = await applyNestDB.find().toArray();
             res.send(result);
         });
+        app.get("/applyByAll", async (req, res) => {
+            
+            let query={};
+            if(req.query?.email)
+                {
+                    query={applicantEmail:req.query.email}
+                }
+                console.log(query);
+            const result = await applyNestDB.find(query).toArray();
+            res.send(result);
+        });
         app.post('/all',async (req, res) => {
             const job = req.body;
             const result = await JobNestDB.insertOne(job);
