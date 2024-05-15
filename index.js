@@ -1,10 +1,12 @@
 const express = require("express");
 const cors = require("cors");
 const jwt = require('jsonwebtoken');
+const cookiePerser=require('cookie-parser')
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 3000;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const cookieParser = require("cookie-parser");
 
 //middleware
 app.use(cors({
@@ -14,6 +16,7 @@ app.use(cors({
   credentials:true
 }));
 app.use(express.json());
+app.use(cookieParser());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.o0npkhl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -24,6 +27,33 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+
+
+
+//middleware
+
+const verifyJWT=(req, res, next) => {
+
+  const token=req?.cookies?.token;
+  // console.log(token);
+  if(!token)
+    {
+      return res.status(401).send({message:'Unathorized access'})
+    }
+    jwt.verify(token,process.env.JWT_SECRET,(err,decoded)=>
+    {
+      if(err)
+        {
+          return res.send({message:'UnAthorized access'})
+        }
+      req.user=decoded;
+      next();
+    })
+  
+}
+
+
+
 
 async function run() {
   try {
@@ -52,13 +82,17 @@ async function run() {
       const result = await JobNestDB.find().toArray();
       res.send(result);
     });
-    app.get("/posted", async (req, res) => {
+    app.get("/posted",verifyJWT, async (req, res) => {
+      if(req.user.email!==req.query.email)
+        {
+          return res.status(403).send({message:'Forbidden Request'});
+        }
       let query = {};
 
       if (req.query?.email) {
         query = { email: req.query.email };
       }
-      console.log(query);
+      
       const result = await JobNestDB.find(query).toArray();
       res.send(result);
     });
@@ -66,7 +100,8 @@ async function run() {
       const result = await applyNestDB.find().toArray();
       res.send(result);
     });
-    app.get("/applyByAll", async (req, res) => {
+    app.get("/applyByAll",verifyJWT, async (req, res) => {
+      
       let query = {};
       if (req.query?.email) {
         query = { applicantEmail: req.query.email };
