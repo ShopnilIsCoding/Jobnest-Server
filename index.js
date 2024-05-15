@@ -11,7 +11,9 @@ const cookieParser = require("cookie-parser");
 //middleware
 app.use(cors({
   origin:[
-    'http://localhost:5173'
+    'http://localhost:5173',
+    "https://jobnestbd.firebaseapp.com",
+    "https://jobnestbd.web.app"
   ],
   credentials:true
 }));
@@ -28,6 +30,11 @@ const client = new MongoClient(uri, {
   },
 });
 
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+};
 
 
 //middleware
@@ -57,8 +64,7 @@ const verifyJWT=(req, res, next) => {
 
 async function run() {
   try {
-    await client.connect();
-    // Send a ping to confirm a successful connection
+    
     await client.db("admin").command({ ping: 1 });
     const JobNestDB = client.db("JobNestDB").collection("jobs");
     const applyNestDB = client.db("JobNestDB").collection("applications");
@@ -66,17 +72,13 @@ async function run() {
     app.post('/jwt',async (req, res) => {
       const user= req.body;
       const token = jwt.sign(user, process.env.JWT_SECRET,{expiresIn:'1h'});
-      res.cookie('token',token,{
-        httpOnly: true,
-        secure:true,
-        sameSite:'none'
-      })
+      res.cookie('token',token,cookieOptions)
       res.send({success:true});
   })
   app.post('/logout',async (req,res)=>
   {
     const user = req.body;
-    res.clearCookie('token',{maxAge:0}).send({success:true})
+    res.clearCookie('token',{...cookieOptions,maxAge:0}).send({success:true})
   })
     app.get("/all", async (req, res) => {
       const result = await JobNestDB.find().toArray();
@@ -168,9 +170,7 @@ async function run() {
         res.send(result);
     });
 
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+   
   } finally {
   }
 }
