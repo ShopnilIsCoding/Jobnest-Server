@@ -1,12 +1,18 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require('jsonwebtoken');
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 3000;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 //middleware
-app.use(cors());
+app.use(cors({
+  origin:[
+    'http://localhost:5173'
+  ],
+  credentials:true
+}));
 app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.o0npkhl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -27,6 +33,21 @@ async function run() {
     const JobNestDB = client.db("JobNestDB").collection("jobs");
     const applyNestDB = client.db("JobNestDB").collection("applications");
 
+    app.post('/jwt',async (req, res) => {
+      const user= req.body;
+      const token = jwt.sign(user, process.env.JWT_SECRET,{expiresIn:'1h'});
+      res.cookie('token',token,{
+        httpOnly: true,
+        secure:true,
+        sameSite:'none'
+      })
+      res.send({success:true});
+  })
+  app.post('/logout',async (req,res)=>
+  {
+    const user = req.body;
+    res.clearCookie('token',{maxAge:0}).send({success:true})
+  })
     app.get("/all", async (req, res) => {
       const result = await JobNestDB.find().toArray();
       res.send(result);
