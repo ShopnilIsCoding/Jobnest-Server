@@ -32,7 +32,7 @@ const client = new MongoClient(uri, {
 
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
+  secure: process.env.NODE_ENV === "production"? true : false,
   sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
 };
 
@@ -42,7 +42,7 @@ const cookieOptions = {
 const verifyJWT=(req, res, next) => {
 
   const token=req?.cookies?.token;
-  // console.log(token);
+  
   if(!token)
     {
       return res.status(401).send({message:'Unathorized access'})
@@ -108,7 +108,7 @@ async function run() {
       if (req.query?.email) {
         query = { applicantEmail: req.query.email };
       }
-      console.log(query);
+      
       const result = await applyNestDB.find(query).toArray();
       res.send(result);
     });
@@ -119,7 +119,7 @@ async function run() {
     });
     app.get("/details/:id", async (req, res) => {
       const id = req.params.id;
-      console.log(id);
+      
       const query = { _id: new ObjectId(id) };
       const result = await JobNestDB.findOne(query);
       res.send(result);
@@ -144,13 +144,13 @@ async function run() {
     app.get("/checkApplication", async (req, res) => {
       const jobId = req.query.jobId;
       const applicantEmail = req.query.applicantEmail;
-      console.log(jobId, applicantEmail);
+      
 
       const existingApplication = await applyNestDB.findOne({
         ID: jobId,
         applicantEmail: applicantEmail,
       });
-      console.log(!!existingApplication);
+      
 
       res.send({ applied: Boolean(existingApplication) });
     });
@@ -159,7 +159,7 @@ async function run() {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) };
         const result = await JobNestDB.deleteOne(query);
-        console.log(result)
+       
         res.send(result);
     });
     app.patch('/update/:id', async (req, res) => {
